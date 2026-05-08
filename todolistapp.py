@@ -41,238 +41,211 @@ def get_db():
     return conn
 
 def init_db():
-    """Initialize all database tables"""
+    """Initialize all database tables with proper columns"""
     conn = get_db()
     cursor = conn.cursor()
     
-    # Create tables one by one to avoid errors
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS schools (
-                name TEXT PRIMARY KEY,
-                address TEXT DEFAULT '',
-                admin_name TEXT DEFAULT '',
-                admin_email TEXT DEFAULT '',
-                admin_phone TEXT DEFAULT '',
-                invite_code TEXT DEFAULT '',
-                created TEXT DEFAULT '',
-                is_active INTEGER DEFAULT 1
-            )
-        """)
-    except:
-        pass
+    # Drop and recreate tables to ensure correct schema (only if tables don't exist)
+    # This is safe because we use IF NOT EXISTS
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                email TEXT,
-                school_name TEXT,
-                name TEXT DEFAULT '',
-                phone TEXT DEFAULT '',
-                staff_id TEXT DEFAULT '',
-                code TEXT DEFAULT '',
-                password TEXT DEFAULT '',
-                role TEXT DEFAULT 'teacher',
-                department TEXT DEFAULT '',
-                joined TEXT DEFAULT '',
-                is_active INTEGER DEFAULT 1,
-                PRIMARY KEY (email, school_name)
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS schools (
+            name TEXT PRIMARY KEY,
+            address TEXT DEFAULT '',
+            admin_name TEXT DEFAULT '',
+            admin_email TEXT DEFAULT '',
+            admin_phone TEXT DEFAULT '',
+            invite_code TEXT DEFAULT '',
+            created TEXT DEFAULT '',
+            is_active INTEGER DEFAULT 1
+        )
+    """)
     
+    # Check if 'created' column exists, if not add it
     try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS books (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                school_name TEXT DEFAULT '',
-                title TEXT DEFAULT '',
-                author TEXT DEFAULT '',
-                category TEXT DEFAULT '',
-                quantity INTEGER DEFAULT 1,
-                available INTEGER DEFAULT 1,
-                added_by TEXT DEFAULT '',
-                added_at TEXT DEFAULT ''
-            )
-        """)
+        cursor.execute("SELECT created FROM schools LIMIT 1")
     except:
-        pass
+        cursor.execute("ALTER TABLE schools ADD COLUMN created TEXT DEFAULT ''")
     
+    # Check if 'is_active' column exists
     try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS borrowed (
-                id TEXT PRIMARY KEY,
-                school_name TEXT DEFAULT '',
-                book_title TEXT DEFAULT '',
-                book_no TEXT DEFAULT '',
-                borrower_name TEXT DEFAULT '',
-                borrower_id TEXT DEFAULT '',
-                department TEXT DEFAULT '',
-                borrow_date TEXT DEFAULT '',
-                due_date TEXT DEFAULT '',
-                return_date TEXT DEFAULT '',
-                returned INTEGER DEFAULT 0,
-                fine REAL DEFAULT 0,
-                fine_paid INTEGER DEFAULT 0,
-                issued_by TEXT DEFAULT ''
-            )
-        """)
+        cursor.execute("SELECT is_active FROM schools LIMIT 1")
     except:
-        pass
+        cursor.execute("ALTER TABLE schools ADD COLUMN is_active INTEGER DEFAULT 1")
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS furniture (
-                id TEXT PRIMARY KEY,
-                school_name TEXT DEFAULT '',
-                item_type TEXT DEFAULT '',
-                item_number TEXT DEFAULT '',
-                assigned_to TEXT DEFAULT '',
-                department TEXT DEFAULT '',
-                assigned_date TEXT DEFAULT '',
-                returned INTEGER DEFAULT 0
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            email TEXT,
+            school_name TEXT,
+            name TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            staff_id TEXT DEFAULT '',
+            code TEXT DEFAULT '',
+            password TEXT DEFAULT '',
+            role TEXT DEFAULT 'teacher',
+            department TEXT DEFAULT '',
+            joined TEXT DEFAULT '',
+            is_active INTEGER DEFAULT 1,
+            last_login TEXT DEFAULT '',
+            PRIMARY KEY (email, school_name)
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS members (
-                id TEXT PRIMARY KEY,
-                school_name TEXT DEFAULT '',
-                name TEXT DEFAULT '',
-                department TEXT DEFAULT '',
-                phone TEXT DEFAULT '',
-                email TEXT DEFAULT ''
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS books (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school_name TEXT DEFAULT '',
+            title TEXT DEFAULT '',
+            author TEXT DEFAULT '',
+            category TEXT DEFAULT '',
+            quantity INTEGER DEFAULT 1,
+            available INTEGER DEFAULT 1,
+            added_by TEXT DEFAULT '',
+            added_at TEXT DEFAULT ''
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS classes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                school_name TEXT DEFAULT '',
-                name TEXT DEFAULT '',
-                students TEXT DEFAULT '[]',
-                created_by TEXT DEFAULT '',
-                created TEXT DEFAULT ''
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS borrowed (
+            id TEXT PRIMARY KEY,
+            school_name TEXT DEFAULT '',
+            book_title TEXT DEFAULT '',
+            book_no TEXT DEFAULT '',
+            borrower_name TEXT DEFAULT '',
+            borrower_id TEXT DEFAULT '',
+            department TEXT DEFAULT '',
+            borrow_date TEXT DEFAULT '',
+            due_date TEXT DEFAULT '',
+            return_date TEXT DEFAULT '',
+            returned INTEGER DEFAULT 0,
+            fine REAL DEFAULT 0,
+            fine_paid INTEGER DEFAULT 0,
+            issued_by TEXT DEFAULT ''
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS reservations (
-                id TEXT PRIMARY KEY,
-                school_name TEXT DEFAULT '',
-                book_title TEXT DEFAULT '',
-                reserved_by TEXT DEFAULT '',
-                department TEXT DEFAULT '',
-                reservation_date TEXT DEFAULT '',
-                needed_by TEXT DEFAULT '',
-                status TEXT DEFAULT 'Pending'
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS furniture (
+            id TEXT PRIMARY KEY,
+            school_name TEXT DEFAULT '',
+            item_type TEXT DEFAULT '',
+            item_number TEXT DEFAULT '',
+            assigned_to TEXT DEFAULT '',
+            department TEXT DEFAULT '',
+            assigned_date TEXT DEFAULT '',
+            returned INTEGER DEFAULT 0
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS chat_messages (
-                id TEXT PRIMARY KEY,
-                school_name TEXT DEFAULT '',
-                from_email TEXT DEFAULT '',
-                from_name TEXT DEFAULT '',
-                to_email TEXT DEFAULT '',
-                department TEXT DEFAULT '',
-                message TEXT DEFAULT '',
-                timestamp TEXT DEFAULT '',
-                is_read INTEGER DEFAULT 0
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS members (
+            id TEXT PRIMARY KEY,
+            school_name TEXT DEFAULT '',
+            name TEXT DEFAULT '',
+            department TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            email TEXT DEFAULT ''
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS announcements (
-                id TEXT PRIMARY KEY,
-                school_name TEXT DEFAULT '',
-                title TEXT DEFAULT '',
-                content TEXT DEFAULT '',
-                priority TEXT DEFAULT 'Normal',
-                posted_by TEXT DEFAULT '',
-                department TEXT DEFAULT '',
-                posted_at TEXT DEFAULT ''
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS classes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school_name TEXT DEFAULT '',
+            name TEXT DEFAULT '',
+            students TEXT DEFAULT '[]',
+            created_by TEXT DEFAULT '',
+            created TEXT DEFAULT ''
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS documents (
-                id TEXT PRIMARY KEY,
-                school_name TEXT DEFAULT '',
-                title TEXT DEFAULT '',
-                file_type TEXT DEFAULT '',
-                file_data TEXT DEFAULT '',
-                subject TEXT DEFAULT '',
-                uploaded_by TEXT DEFAULT '',
-                uploaded_at TEXT DEFAULT ''
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reservations (
+            id TEXT PRIMARY KEY,
+            school_name TEXT DEFAULT '',
+            book_title TEXT DEFAULT '',
+            reserved_by TEXT DEFAULT '',
+            department TEXT DEFAULT '',
+            reservation_date TEXT DEFAULT '',
+            needed_by TEXT DEFAULT '',
+            status TEXT DEFAULT 'Pending'
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS audit_log (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                school_name TEXT DEFAULT '',
-                timestamp TEXT DEFAULT '',
-                user TEXT DEFAULT '',
-                action TEXT DEFAULT '',
-                details TEXT DEFAULT ''
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id TEXT PRIMARY KEY,
+            school_name TEXT DEFAULT '',
+            from_email TEXT DEFAULT '',
+            from_name TEXT DEFAULT '',
+            to_email TEXT DEFAULT '',
+            department TEXT DEFAULT '',
+            message TEXT DEFAULT '',
+            timestamp TEXT DEFAULT '',
+            is_read INTEGER DEFAULT 0
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS wallpapers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                school_name TEXT DEFAULT '',
-                name TEXT DEFAULT '',
-                url TEXT DEFAULT '',
-                uploaded_by TEXT DEFAULT ''
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS announcements (
+            id TEXT PRIMARY KEY,
+            school_name TEXT DEFAULT '',
+            title TEXT DEFAULT '',
+            content TEXT DEFAULT '',
+            priority TEXT DEFAULT 'Normal',
+            posted_by TEXT DEFAULT '',
+            department TEXT DEFAULT '',
+            posted_at TEXT DEFAULT ''
+        )
+    """)
     
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS password_resets (
-                email TEXT,
-                school_name TEXT,
-                token TEXT DEFAULT '',
-                expiry TEXT DEFAULT '',
-                used INTEGER DEFAULT 0
-            )
-        """)
-    except:
-        pass
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS documents (
+            id TEXT PRIMARY KEY,
+            school_name TEXT DEFAULT '',
+            title TEXT DEFAULT '',
+            file_type TEXT DEFAULT '',
+            file_data TEXT DEFAULT '',
+            subject TEXT DEFAULT '',
+            uploaded_by TEXT DEFAULT '',
+            uploaded_at TEXT DEFAULT ''
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school_name TEXT DEFAULT '',
+            timestamp TEXT DEFAULT '',
+            user TEXT DEFAULT '',
+            action TEXT DEFAULT '',
+            details TEXT DEFAULT ''
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school_name TEXT DEFAULT '',
+            name TEXT DEFAULT '',
+            url TEXT DEFAULT '',
+            uploaded_by TEXT DEFAULT ''
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS password_resets (
+            email TEXT,
+            school_name TEXT,
+            token TEXT DEFAULT '',
+            expiry TEXT DEFAULT '',
+            used INTEGER DEFAULT 0
+        )
+    """)
     
     conn.commit()
     conn.close()
-    print("Database initialized successfully")
+    print("✅ Database initialized successfully")
 
 # Initialize database
 init_db()
